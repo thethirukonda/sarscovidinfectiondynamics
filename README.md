@@ -195,8 +195,6 @@ The composition shifts across infection stages, particularly with changes in ion
 
 **2\. Why do these cell types correlate with COVID-19 infection?**
 
-Based strictly on your notebook's data:
-
 - **Ionocytes** consistently show high ACE2 expression scores and become more distinct across time points. Since ACE2 is the viral entry receptor, ionocytes naturally appear infection-associated in this dataset.
 - **Alveolar macrophages** show activation signatures and cluster expansion during later infection stages, which aligns with their immune-response role.
 - **Pulmonary alveolar type II cells** appear early and remain present, suggesting they are sensitive to infection-driven transcriptional changes.
@@ -206,9 +204,7 @@ These correlations come from expression patterns and shifts visible in cluster s
 
 **3\. Is ACE2 a good marker for tracking COVID-19 infection rate (based on this dataset)?**
 
-Yes - your dataset supports ACE2 as a reliable infection marker.
-
-Evidence from your analysis:
+ACE2 as a reliable infection marker.
 
 - **Mean ACE2 expression triples from Mock to 1 dpi**, and remains elevated at 2 and 3 dpi.
 - The **95% confidence intervals do not overlap** between Mock and infected groups, indicating statistically meaningful increases.
@@ -216,11 +212,9 @@ Evidence from your analysis:
 - A **Kruskal-Wallis test** and pairwise **Mann-Whitney tests** confirm large, non-random differences between clusters.
 - ACE2 shows **cluster-specific enrichment**, especially in ionocytes.
 
-Although ACE2 appears visually faint on UMAP (because values are low in magnitude), the statistical tests reveal clear infection-dependent changes. Thus, in this dataset, ACE2 performs reliably as a biomarker.
+Although ACE2 appears visually faint on UMAP (because values are low in magnitude), the statistical tests reveal clear infection-dependent changes.
 
 **4\. What is the difference between ENO2 and ACE2 as biomarkers in your study?**
-
-Based on your notebook:
 
 - **ACE2** shows detectable increases across infection conditions and strong enrichment within specific clusters. It captures biologically meaningful variation and correlates with infection progression.
 - **ENO2**, in contrast, has almost no measurable expression in any cluster or condition. UMAPs show uniformly near-zero values, and no cluster-specific or condition-specific pattern is present.
@@ -229,11 +223,7 @@ Therefore, ENO2 is not informative in this dataset, while ACE2 is statistically 
 
 **5\. Which cell cluster has the highest abundance of ACE2 expression after 3 dpi, and what does that mean biologically (visual interpretation)?**
 
-Your statistical and visual analyses both indicate that:
-
 **Ionocytes (Cluster 2)** show the highest ACE2 expression at 3 dpi.
-
-Interpretation based on your plots:
 
 - In the violin plots and scatter overlays, ionocytes contain the densest and highest range of ACE2-positive values.
 - Other clusters (macrophages, ciliated cells, type II cells) have sparse ACE2 expression with much lower means.
