@@ -186,9 +186,6 @@ Areas Where I can improve**
 - Make It more reprodubile.
 - Some monolithic cells could be broken into smaller conceptual steps.
 
-Below is a **clean, consolidated answer** to all your questions, **strictly based on what your notebook shows** - the UMAPs, marker plots, cluster annotations, QC, and differential expression.  
-No external biology is added.  
-Only interpretations that come directly from your figures and analysis.
 
 # 1\. **What cell types did you identify at the different stages of infection?**
 
@@ -282,7 +279,7 @@ These dots represent the "highest expression," but:
 - They do **not form a cluster**
 - **The highest ACE2 expression at 3 dpi occurs as scattered, faint points in the top-right cluster. The signal is extremely weak and does not correspond to the large infected-state cluster. This visually confirms that ACE2 does not track infection in this dataset.**
 
-# ⭐ FINAL CONSOLIDATED SUMMARY (Notebook-only)
+# ⭐ FINAL CONSOLIDATED SUMMARY 
 
 - **Identified cell types:** Ciliated, Clara, alveolar type II-like cells, macrophage-type clusters, transitional infected states.
 - **Why they correlate with infection:** Their UMAP location, cluster size, and gene-scoring patterns shift progressively from Mock → 3 dpi.
