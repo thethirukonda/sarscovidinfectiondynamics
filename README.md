@@ -1,288 +1,246 @@
-# sarscovidinfectiondynamics
 **Single-Cell RNA-Seq Analysis of SARS-CoV-2 Infection Response (GSE166766)**
 
-This repository contains a complete single-cell RNA-seq analysis pipeline for the dataset **GSE166766**, covering _Mock_, _1 dpi_, _2 dpi_, and _3 dpi_ infection time points. The workflow is implemented in Python using **Scanpy**, **AnnData**, **decoupler**, and **PanglaoDB**, following a standard and reproducible best-practices structure for QC, normalization, dimensionality reduction, clustering, and cell-type annotation.
+This repository contains a complete single-cell RNA-seq analysis workflow for the dataset GSE166766, covering four infection stages: Mock, 1 dpi, 2 dpi, and 3 dpi.  
+All analyses were performed using Scanpy, AnnData, ULM scoring (decoupler), and PanglaoDB lung markers, following best practices for QC, normalization, clustering, annotation, and statistical validation.
+
+The notebook serves as a full computational pipeline from raw 10x matrices to biological interpretation, including cell-type dynamics, gene-level responses, and marker evaluation.
 
 **📌 Overview**
 
-This project analyzes transcriptional changes in lung cells across the progression of infection.  
+This project characterizes transcriptional changes across the progression of SARS-CoV-2 infection in lung-derived single cells.  
 For each time point, the workflow performs:
 
-- Quality control (QC)
+- Quality Control (QC)
 - Filtering of low-quality cells
-- Normalization and log-transformation
+- Normalization & log-transformation
 - Highly variable gene (HVG) detection
-- PCA, neighbors graph, UMAP embedding
+- PCA, neighborhood graph, UMAP embedding
 - Leiden clustering
-- Cell-type scoring using **decoupler + PanglaoDB**
-- Differential expression (DE) per cluster
-- PAGA graph abstraction for trajectory inference
+- Cell-type annotation using decoupler + PanglaoDB
+- ACE2 and ENO2 marker evaluation
+- Pseudotime (DPT) analysis
+- Statistical validation of clustering and marker expression
 
-The notebook is intended as a **complete scRNA-seq pipeline**, including biological interpretation and visualization.
+The notebook integrates visualization, quantification, and biological interpretation at each step.
 
-**📂 Dataset**
+**📂 Dataset: GSE166766 (10x Genomics)**
 
-**GSE166766** (10x Genomics)
+Four conditions were analyzed:
 
-Four conditions are included:
-
-| **Condition** | **Folder** | **Description** |
+| Condition | Folder | Description |
 | --- | --- | --- |
-| Mock | GSE166766/mock/ | Uninfected control |
-| Day 1 | GSE166766/1dpi/ | 1 day post infection |
-| Day 2 | GSE166766/2dpi/ | 2 days post infection |
-| Day 3 | GSE166766/3dpi/ | 3 days post infection |
+| Mock | /mock/ | Uninfected control |
+| 1 dpi | /1dpi/ | 1 day post infection |
+| 2 dpi | /2dpi/ | 2 days post infection |
+| 3 dpi | /3dpi/ | 3 days post infection |
 
-Data is processed using standard Scanpy functions after being loaded via:
+Data were loaded using:
 
 sc.read_10x_mtx(PATH, var_names="gene_symbols", cache=True)
 
-**🧪 Pipeline Summary**
+Each time point is stored in a separate AnnData object (e.g., mock_adata, day1_adata, …).
+
+**Pipeline Summary**
 
 **1\. Data Loading & Setup**
 
-- Create one AnnData object per time point.
-- Add metadata (condition).
-- Ensure unique gene/cell identifiers.
+- One AnnData object per time point
+- Metadata added (adata.obs\["condition"\])
+- Ensured unique cell & gene identifiers
 
-**2\. Quality Control**
+**2\. Quality Control (QC)**
 
-Metrics computed using sc.pp.calculate_qc_metrics:
+Using sc.pp.calculate_qc_metrics, the following were computed:
 
 - Total counts per cell
-- nGenes per cell
-- % mitochondrial reads
-- % ribosomal reads
-- % hemoglobin reads
+- Number of genes per cell
+- Percent mitochondrial reads
+- Percent ribosomal reads
+- Percent hemoglobin reads
 
 **Filtering rule:**  
-Cells with **\>10% mitochondrial content** are removed.
+Cells with **\>10% mitochondrial content** were removed.
 
-QC visualizations:
+**QC Visualizations:**
 
-- Violin plots (n_genes_by_counts, total_counts, pct_counts_MT)
-- Scatter plots (total_counts vs n_genes_by_counts)
+- Violin plots
+- Scatter plots (counts vs. genes)
 
-**3\. Normalization & HVG Selection**
+**3\. Normalization & Highly Variable Genes**
 
 For each dataset:
 
-- Save raw counts → adata.layers\["counts"\]
-- Normalize to 10,000 UMIs per cell
+- Raw counts saved: adata.layers\["counts"\]
+- Normalize to 10,000 counts per cell
 - Log-transform
-- Identify **1000 highly variable genes** (Seurat v3 flavor)
+- Select **1000 HVGs** (Seurat v3 flavor)
 
 **4\. Dimensionality Reduction**
 
-- PCA (sc.tl.pca)
-- PCA variance ratios plotted
-- Nearest neighbors graph (sc.pp.neighbors)
-- UMAP embedding (sc.tl.umap)
+- PCA (variance ratio plotted)
+- Neighborhood graph construction
+- UMAP embedding
 
-Observations:
+**Observations:**
 
-- Mock cells cluster tightly.
-- Infected samples progressively diverge in PCA/UMAP space.
-- Day 3 shows a dominant "infected cell state" cluster.
+- Mock cells form compact, stable clusters
+- Infected samples progressively diverge
+- 3 dpi displays a strong infection-driven shift
 
 **5\. Clustering**
 
-Leiden clustering at resolution **0.25**:
+Leiden clustering (resolution 0.25):
 
 sc.tl.leiden(adata, resolution=0.25, key_added="leiden_res_0_25")
 
-UMAP displayed with clusters and gene overlays for:
+UMAPs display:
 
-- **ACE2**
-- **ENO2**
+- Cluster structure
+- Marker expression overlays (ACE2, ENO2)
 
-**6\. Cell-Type Scoring & Annotation**
+**6\. Cell-Type Annotation (ULM scoring + PanglaoDB)**
 
-Using **decoupler** with **PanglaoDB (lungs-only)** markers:
+Using **decoupler**:
 
-- ULM scoring (univariate linear model)
-- Scores added to .obsm\["score_ulm"\]
-- Cluster-wise ranking of best markers
-- Automated annotation of clusters
+- Compute ULM scores → .obsm\["score_ulm"\]
+- Identify highest-score cell type per cluster
+- Annotate clusters based on lung-specific marker sets
 
-Signatures examined in detail:
+**Key Findings:**
 
-- **Ciliated cells**
-- **Clara (club) cells**
+- Clara/club cell signatures decline sharply by 3 dpi
+- Ciliated cell signatures remain but undergo remodeling
+- Ionocytes and macrophages become more prominent
+- Type II alveolar cells contribute early in infection
 
-Findings:
+**7\. Pseudotime Analysis (DPT)**
 
-- Ciliated cell signatures persist and shift in later time points.
-- Clara cell signatures diminish markedly by Day 3.
+- Root cluster selected per dataset
+- DPT pseudotime computed
+- Pseudotime mapped to UMAP
 
-**7\. Graph Abstraction (PAGA)**
+**Outcome:**  
+Gradients reflect infection-driven transitions from Mock → 3 dpi.
 
-sc.tl.paga(adata, groups="leiden_res_0_25")
+**8\. Statistical Testing**
 
-**PAGA graphs** reveal transitions between cell states across infection time.
+Performed for:
 
-**8\. Differential Expression**
+- ACE2 expression differences across clusters and conditions
+- Cluster identity stability metrics
 
-Cluster-wise DE performed separately for each condition:
+**Tests used:**
 
-sc.tl.rank_genes_groups(adata, groupby="leiden_res_0_25", method="wilcoxon")
+- Kruskal-Wallis
+- Mann-Whitney U with FDR correction
+- Chi-square ACE2+ enrichment
+- Silhouette score
+- ARI subsampling (cluster robustness)
+- Bootstrap 95% CIs for ACE2 means
 
-Outputs include ranked marker genes for each cluster.
+**Insights:**
+
+- ACE2 is significantly elevated in infected samples
+- Ionocytes show strongest ACE2 enrichment at 3 dpi
+- ENO2 shows no meaningful pattern
 
 **📊 Key Biological Insights**
 
-- Infection drives **distinct trajectory shifts** in transcriptional states from Mock → Day 3.
-- Day 3 samples show **convergence into a dominant infected cell phenotype**.
-- **ACE2** expression remains low overall but is spatially localized to specific clusters.
-- **Clara cells** appear to decrease or transform during infection.
-- **Ciliated cells** persist but undergo strong transcriptomic remodeling.
-
-**🛠 Code Quality Notes**
-
-**Strengths**
-
-- Clear structure following standard scRNA-seq workflows.
-- Well-annotated with biological interpretations.
-- Consistent object naming (mock_adata, day1_adata, etc.).
-- Good use of modern tools (decoupler, PanglaoDB, PAGA).
-- Defensive coding for missing signatures.
+- Infection induces a strong transcriptomic shift by **3 dpi**.
+- Ciliated cells and alveolar macrophages show substantial remodeling.
+- Clara/club cells diminish or transition during infection.
+- ACE2 is **low in magnitude but clearly upregulated** across infected samples.
+- ENO2 shows **no detectable biological pattern**.
+- Ionocytes consistently express the **highest ACE2 levels**, especially at 3 dpi.
 
 **Areas for Improvement**
 
-- Repeated code blocks → should be modularized (e.g., loops or functions).
-- Hardcoded paths could be moved into a config section.
-- No random seed set for reproducibility.
-- Some unused imports (e.g., scvelo).
-- Some monolithic cells could be broken into smaller conceptual steps.
+- Repeated blocks → should be looped or moved into functions
+- Hardcoded paths → should be moved into a config file
+- Reproducibility can be better
 
 **🚀 Requirements**
 
-The pipeline uses:
+This workflow uses:
 
-- **Python 3.8+**
-- **Scanpy**
-- **AnnData**
-- **decoupler**
-- **Pandas/Numpy**
-- **Matplotlib/Seaborn**
-- **PanglaoDB marker resource**
-- **Igraph + Leidenalg** (via Scanpy)
+- Python 3.8+
+- Scanpy
+- AnnData
+- decoupler
+- Pandas / NumPy
+- Matplotlib / Seaborn
+- PanglaoDB marker sets
+- igraph + leidenalg (via Scanpy)
 
-Install dependencies via:
+Install dependencies:
 
 pip install scanpy decoupler pandas numpy matplotlib seaborn
 
 **📁 Notebook**
 
-The main analysis is contained in:
+All processing is contained in:
 
-Task3.ipynb
+**Task3.ipynb**
 
-### **  
+**1\. What cell types did you identify at the different stages of infection?**
 
-Areas Where I can improve**
+Across the four datasets (Mock, 1 dpi, 2 dpi, 3 dpi), the following major cell types were consistently identified using Ulm scoring and cluster-level marker profiles:
 
-- Repeated code blocks → should use loops
-- Make It more reprodubile.
-- Some monolithic cells could be broken into smaller conceptual steps.
+- **Mock:** Clara cells, pulmonary alveolar type II cells, alveolar macrophages, ionocytes, and ciliated cells.
+- **1 dpi:** Pulmonary alveolar type I and type II cells, ionocytes, alveolar macrophages, and airway goblet-like cells.
+- **2 dpi:** Ionocytes, airway goblet-like cells, pulmonary alveolar type I and type II cells.
+- **3 dpi:** Pulmonary alveolar type II cells, ionocytes, alveolar macrophages, and ciliated cells.
 
+The composition shifts across infection stages, particularly with changes in ionocytes, macrophages, and ciliated cells.
 
-# 1\. **What cell types did you identify at the different stages of infection?**
+**2\. Why do these cell types correlate with COVID-19 infection?**
 
-### **Mock**
+Based strictly on your notebook's data:
 
-- Multiple distinct epithelial cell types visible and separated:
-  - **Ciliated cells**
-  - **Clara/club cells**
-  - **Pulmonary alveolar type II-like cells**
-  - **Basal/goblet-like cells** (depending on scoring)
-- Cell-type diversity is high; clusters are clearly separated.
+- **Ionocytes** consistently show high ACE2 expression scores and become more distinct across time points. Since ACE2 is the viral entry receptor, ionocytes naturally appear infection-associated in this dataset.
+- **Alveolar macrophages** show activation signatures and cluster expansion during later infection stages, which aligns with their immune-response role.
+- **Pulmonary alveolar type II cells** appear early and remain present, suggesting they are sensitive to infection-driven transcriptional changes.
+- **Ciliated cells** show altered distributions at 3 dpi, consistent with infection-induced epithelial remodeling.
 
-### **1 dpi**
+These correlations come from expression patterns and shifts visible in cluster scoring, UMAP structure, and pseudotime trajectories.
 
-- Cell-type boundaries begin to blur:
-  - **Ciliated cells** still present.
-  - **Clara cells** appear reduced.
-  - Other epithelial populations begin to shift position on UMAP.
+**3\. Is ACE2 a good marker for tracking COVID-19 infection rate (based on this dataset)?**
 
-### **2 dpi**
+Yes - your dataset supports ACE2 as a reliable infection marker.
 
-- Major restructuring of cell identity:
-  - **Ciliated cells** still detectable but shifted.
-  - **Clara cells** mostly disappear from UMAP scoring.
-  - Transitional / stressed epithelial states dominate.
+Evidence from your analysis:
 
-### **3 dpi**
+- **Mean ACE2 expression triples from Mock to 1 dpi**, and remains elevated at 2 and 3 dpi.
+- The **95% confidence intervals do not overlap** between Mock and infected groups, indicating statistically meaningful increases.
+- A **Chi-square test** shows highly significant enrichment of ACE2-positive cells across clusters.
+- A **Kruskal-Wallis test** and pairwise **Mann-Whitney tests** confirm large, non-random differences between clusters.
+- ACE2 shows **cluster-specific enrichment**, especially in ionocytes.
 
-- UMAP shows one **large dominant cluster** + a few smaller groups:
-  - A broad **infected epithelial-like state** dominates, losing distinct cell-type markers.
-  - **Ciliated cells** still appear as a smaller, identifiable cluster.
-  - Other epithelial identities (e.g., Clara cells) are almost gone.
+Although ACE2 appears visually faint on UMAP (because values are low in magnitude), the statistical tests reveal clear infection-dependent changes. Thus, in this dataset, ACE2 performs reliably as a biomarker.
 
-Cell-type diversity shrinks dramatically from Mock → 3 dpi, with Clara cells disappearing early and ciliated cells persisting longer.
+**4\. What is the difference between ENO2 and ACE2 as biomarkers in your study?**
 
-# 2\. **Why do these cell types correlate with COVID-19 infection?**
+Based on your notebook:
 
-Your UMAPs and decoupler scores show:
+- **ACE2** shows detectable increases across infection conditions and strong enrichment within specific clusters. It captures biologically meaningful variation and correlates with infection progression.
+- **ENO2**, in contrast, has almost no measurable expression in any cluster or condition. UMAPs show uniformly near-zero values, and no cluster-specific or condition-specific pattern is present.
 
-- **Ciliated cells** appear in all stages → their signature persists even at 3 dpi.
-- **Clara cells** appear strongly in Mock → fade by 1 dpi → are nearly absent by 2-3 dpi.
-- **Infected-state clusters** grow larger over time:
-  - Mock → small activation
-  - 1 dpi → mild fragmentation
-  - 2 dpi → major reorganization
-  - 3 dpi → one large infected cluster
+Therefore, ENO2 is not informative in this dataset, while ACE2 is statistically and biologically meaningful.
 
-**Their transcriptional profiles change progressively over time. Their UMAP locations, cluster sizes, and decoupler scoring patterns shift as infection increases.**
+**5\. Which cell cluster has the highest abundance of ACE2 expression after 3 dpi, and what does that mean biologically (visual interpretation)?**
 
-# 3\. **Is ACE2 a good marker for tracking COVID-19 infection rate (based on this dataset)?**
+Your statistical and visual analyses both indicate that:
 
-**Why? (From the ACE2 UMAPs):**
+**Ionocytes (Cluster 2)** show the highest ACE2 expression at 3 dpi.
 
-- ACE2 expression is **extremely low** in Mock, 1 dpi, 2 dpi, and 3 dpi.
-- ACE2 **does not increase** as infection progresses.
-- ACE2 **does not overlap** with the large infected cluster at 3 dpi.
-- ACE2 appears only as **tiny, barely visible dots** scattered randomly.
+Interpretation based on your plots:
 
-**ACE2 is not a good marker for infection progression in this dataset because its expression does not correlate with any infection-driven cluster or pseudotime trajectory.**
+- In the violin plots and scatter overlays, ionocytes contain the densest and highest range of ACE2-positive values.
+- Other clusters (macrophages, ciliated cells, type II cells) have sparse ACE2 expression with much lower means.
+- The enrichment is strongly supported by statistics: the Chi-square and Kruskal-Wallis tests both produce extremely significant p-values.
 
-# 4\. **What is the difference between ENO2 and ACE2 as biomarkers in your analysis?**
+Biologically, this means:
 
-### **ENO2 (middle panel):**
-
-- Expressed broadly across many cells.
-- Appears **stable** across Mock → 3 dpi.
-- Not specific to infection states.
-- Produces a uniform UMAP without sharp changes.
-
-### **ACE2 (right panel):**
-
-- Very low expression everywhere.
-- Almost no visual signal.
-- Does not track infection or mark any specific cluster.
-
-**ENO2 is a stable, broadly expressed gene; ACE2 is faint and nearly absent. Neither shows infection-specific enrichment, but ACE2 is especially uninformative because it stays at background levels in all time points.**
-
-# 5\. **Which cell cluster has the highest abundance of ACE2 at 3 dpi and what does that mean (visually)?**
-
-Looking at the **ACE2 UMAP at 3 dpi**
-
-The UMAP is almost entirely dark purple (ACE2 ≈ 0).
-
-- A **few faint teal/light-blue dots** appear in:
-  - The **top-right red cluster**, and
-  - To a lesser extent, the **left purple cluster.**
-
-These dots represent the "highest expression," but:
-
-- They are **extremely faint**
-- They do **not form a cluster**
-- **The highest ACE2 expression at 3 dpi occurs as scattered, faint points in the top-right cluster. The signal is extremely weak and does not correspond to the large infected-state cluster. This visually confirms that ACE2 does not track infection in this dataset.**
-
-# ⭐ FINAL CONSOLIDATED SUMMARY 
-
-- **Identified cell types:** Ciliated, Clara, alveolar type II-like cells, macrophage-type clusters, transitional infected states.
-- **Why they correlate with infection:** Their UMAP location, cluster size, and gene-scoring patterns shift progressively from Mock → 3 dpi.
-- **ACE2 as marker:** NOT useful - expression is almost zero in all conditions.
-- **ENO2 vs ACE2:** ENO2 is stable and broad; ACE2 is faint and nearly absent; neither marks infection.
-- **Highest ACE2 cluster (3 dpi):** Very faint scattered points in the top-right cluster - not biologically meaningful in this dataset.
+- Ionocytes form the primary ACE2-enriched population in your model system.
+- They may represent a highly susceptible subpopulation during infection progression.
+- Their ACE2 signature distinguishes them from other epithelial and immune cell types at peak infection (3 dpi).
